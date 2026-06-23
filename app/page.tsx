@@ -3,7 +3,7 @@ import NewsFeed from '@/components/NewsFeed';
 import Brand from '@/components/Brand';
 import { getPublished } from '@/lib/db';
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const articles = await getPublished(40);

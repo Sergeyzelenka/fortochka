@@ -43,7 +43,7 @@ export async function getPublished(limit = 30): Promise<Article[]> {
     .eq('status', 'published')
     .order('published_at', { ascending: false })
     .limit(limit);
-  if (error) throw error;
+  if (error) { console.error('getPublished error', error); return []; }
   return data as Article[];
 }
 
@@ -73,7 +73,7 @@ export async function getPublishedByCategory(categoryId: number, limit = 40): Pr
     .eq('category_id', categoryId)
     .order('published_at', { ascending: false })
     .limit(limit);
-  if (error) throw error;
+  if (error) { console.error('getPublishedByCategory error', error); return []; }
   return data as Article[];
 }
 

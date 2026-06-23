@@ -13,7 +13,7 @@ function isAiIllustration(url: string | null): boolean {
   return !!url && /\/covers\/ai\//.test(url);
 }
 
-export const revalidate = 600;
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const a = await getBySlug(params.slug);

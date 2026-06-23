@@ -6,11 +6,7 @@ import Brand from '@/components/Brand';
 import { getPublishedByCategory } from '@/lib/db';
 import { CATEGORIES } from '@/lib/types';
 
-export const revalidate = 300;
-
-export function generateStaticParams() {
-  return CATEGORIES.map(c => ({ slug: c.slug }));
-}
+export const dynamic = 'force-dynamic';
 
 export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
   const cat = CATEGORIES.find(c => c.slug === params.slug);

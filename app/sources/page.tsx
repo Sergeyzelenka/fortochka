@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: 'Редакционные принципы ФОРТОЧКА и полный список RSS-источников, с которыми мы работаем.'
 };
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 interface SrcRow { id: number; name: string; default_category: number | null; enabled: boolean }
 
