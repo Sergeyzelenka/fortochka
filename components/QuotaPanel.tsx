@@ -102,21 +102,22 @@ export default function QuotaPanel() {
           <div className="qp-prov">Gemini <small>2.5 Flash</small></div>
           <div className="qp-counter">
             <b>{s.gemini.calls}</b> / 20 сегодня
-            {s.gemini.errors > 0 && <span className="qp-err"> · {s.gemini.errors} ошибок</span>}
+            {s.gemini.errors > 0 && <span className="qp-err"> · {s.gemini.errors} ошиб.</span>}
           </div>
           <div className="qp-bar" style={{ marginTop: 6 }}>
             <span style={{ width: `${Math.min(100, Math.round((s.gemini.calls / 20) * 100))}%`, background: barColor(100 - (s.gemini.calls / 20) * 100) }} />
           </div>
-          <div className="qp-note">бесплатный лимит 20/день · сброс в полночь UTC · всего за все дни: {s.geminiAll?.calls ?? 0}</div>
+          <div className="qp-note">осталось сегодня: {Math.max(0, 20 - s.gemini.calls)} из 20 · сброс в полночь UTC</div>
+          <div className="qp-note">всего обработано: {s.geminiAll?.calls ?? 0}{(s.geminiAll?.errors ?? 0) > 0 ? ` · ${s.geminiAll?.errors} ошиб.` : ''}</div>
         </div>
 
         <div className="qp-card">
           <div className="qp-prov">APIYI <small>nano-banana</small></div>
           <div className="qp-counter">
-            <b>{s.apiyi.calls}</b> иллюстраций сегодня
-            {s.apiyi.errors > 0 && <span className="qp-err"> · {s.apiyi.errors} ошибок</span>}
+            <b>{s.apiyiAll?.calls ?? 0}</b> иллюстраций всего
+            {(s.apiyiAll?.errors ?? 0) > 0 && <span className="qp-err"> · {s.apiyiAll?.errors} ошиб.</span>}
           </div>
-          <div className="qp-note">сегодня {s.apiyi.calls} · всего за все дни: {s.apiyiAll?.calls ?? 0} · тариф зависит от плана APIYI</div>
+          <div className="qp-note">сегодня: {s.apiyi.calls} · остаток смотри в кабинете APIYI</div>
         </div>
       </div>
     </div>
