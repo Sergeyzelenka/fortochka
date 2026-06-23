@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Article, CATEGORIES, catById } from '@/lib/types';
@@ -22,6 +22,9 @@ export default function AdminQueue({ initial }: { initial: Article[] }) {
   const [editForm, setEditForm] = useState<{ title: string; dek: string; body_html: string; tg_excerpt: string; image_url: string }>({ title: '', dek: '', body_html: '', tg_excerpt: '', image_url: '' });
   const [savingEdit, setSavingEdit] = useState(false);
   const [uploadingCover, setUploadingCover] = useState<number | null>(null);
+  // id статей, которые мы уже опубликовали/отклонили в этой сессии — чтобы
+  // фоновое автообновление не возвращало их в очередь из-за задержки базы.
+  const decidedIds = useRef<Set<number>>(new Set());
 
   async function uploadCoverFile(a: Article, file: File) {
     setUploadingCover(a.id);
@@ -102,11 +105,10 @@ export default function AdminQueue({ initial }: { initial: Article[] }) {
         if (!r.ok) return;
         const d = await r.json();
         if (!alive || !Array.isArray(d.items)) return;
-        // Сохраняем выбор рубрики на карточках при ребилде.
-        setItems(prev => {
-          const localCats = new Map(prev.map(x => [x.id, cats[x.id]]));
-          return d.items.map((x: Article) => ({ ...x }));
-        });
+        // Отбрасываем статьи, которые мы только что опубликовали/отклонили:
+        // база могла ещё не успеть отдать новый статус.
+        const fresh = d.items.filter((x: Article) => !decidedIds.current.has(x.id));
+        setItems(fresh.map((x: Article) => ({ ...x })));
       } catch { /* тихо */ }
     }
     tickCounts(); tickPending();
@@ -188,22 +190,35 @@ export default function AdminQueue({ initial }: { initial: Article[] }) {
 
   async function decide(a: Article, approve: boolean) {
     setLeaving(a.id);
-    const res = await fetch('/api/admin/decide', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: a.id,
-        approve,
-        category_id: cats[a.id] ?? a.category_id
-      })
-    });
-    const data = await res.json();
-    setTimeout(() => {
-      setItems(prev => prev.filter(x => x.id !== a.id));
-      setLeaving(null);
-    }, 350);
-    setToast(data.message ?? (approve ? 'Опубликовано' : 'Отклонено'));
-    setTimeout(() => setToast(''), 3000);
+    // Запоминаем id обработанных статей, чтобы автообновление очереди не
+    // затянуло их обратно из-за задержки репликации базы.
+    decidedIds.current.add(a.id);
+    try {
+      const res = await fetch('/api/admin/decide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: a.id,
+          approve,
+          category_id: cats[a.id] ?? a.category_id
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        // Убираем карточку сразу (с короткой анимацией ухода).
+        setTimeout(() => setItems(prev => prev.filter(x => x.id !== a.id)), 300);
+        setToast(data.message ?? (approve ? 'Опубликовано' : 'Отклонено'));
+      } else {
+        // Ошибка — карточку оставляем, чтобы можно было повторить.
+        decidedIds.current.delete(a.id);
+        setToast(data.error ?? 'Не удалось. Попробуй ещё раз.');
+      }
+    } catch (e: any) {
+      decidedIds.current.delete(a.id);
+      setToast(e.message ?? 'Ошибка сети');
+    }
+    setLeaving(null);
+    setTimeout(() => setToast(''), 3500);
   }
 
   return (
@@ -458,7 +473,38 @@ export default function AdminQueue({ initial }: { initial: Article[] }) {
                           onClick={() => redraft(a, 'gemini')}
                           disabled={!!redrafting || !!leaving}
                           title="Переписать через Gemini"
-                        >
+                                       >
+                          {redrafting?.id === a.id && redrafting.model === 'gemini' ? '…' : '↻ Gemini'}
+                        </button>
+                      </div>
+                      <button
+                        className="redraft-btn"
+                        onClick={() => startEdit(a)}
+                        disabled={!!redrafting || !!leaving}
+                        title="Править вручную"
+                        style={{ marginBottom: 6 }}
+                      >
+                        ✎ Редактировать
+                      </button>
+                      <button className="abtn ok" onClick={() => decide(a, true)} disabled={leaving === a.id}>
+                        Опубликовать: сайт + Telegram
+                      </button>
+                      <button className="abtn no" onClick={() => decide(a, false)} disabled={leaving === a.id}>
+                        Отклонить
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className={`toast${toast ? ' show' : ''}`}>{toast}</div>
+    </div>
+  );
+}
+         >
                           {redrafting?.id === a.id && redrafting.model === 'gemini' ? '…' : '↻ Gemini'}
                         </button>
                       </div>

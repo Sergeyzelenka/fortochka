@@ -148,7 +148,7 @@ export async function getRecentLogs(limit = 200): Promise<PipelineLogRow[]> {
 export async function log(articleId: number | null, step: string, ok: boolean, detail = '') {
   if (isMock) {
     console.log(`[log] ${step} ${ok ? 'OK' : 'FAIL'} #${articleId ?? '-'} ${detail}`);
-    return;
+       return;
   }
   await sb().from('pipeline_log').insert({ article_id: articleId, step, ok, detail });
 }
