@@ -504,34 +504,3 @@ export default function AdminQueue({ initial }: { initial: Article[] }) {
     </div>
   );
 }
-         >
-                          {redrafting?.id === a.id && redrafting.model === 'gemini' ? '…' : '↻ Gemini'}
-                        </button>
-                      </div>
-                      <button
-                        className="redraft-btn"
-                        onClick={() => startEdit(a)}
-                        disabled={!!redrafting || !!leaving}
-                        title="Править вручную"
-                        style={{ marginBottom: 6 }}
-                      >
-                        ✎ Редактировать
-                      </button>
-                      <button className="abtn ok" onClick={() => decide(a, true)} disabled={leaving === a.id}>
-                        Опубликовать: сайт + Telegram
-                      </button>
-                      <button className="abtn no" onClick={() => decide(a, false)} disabled={leaving === a.id}>
-                        Отклонить
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div className={`toast${toast ? ' show' : ''}`}>{toast}</div>
-    </div>
-  );
-}
