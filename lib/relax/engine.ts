@@ -1,3 +1,16 @@
+// Публичный тип хэндла, который возвращает startRelax().
+// Описывает методы, которыми пользуется RelaxWindow.tsx.
+export type RelaxQuality = 'auto' | 'low' | 'mid' | 'high';
+
+export interface EngineHandle {
+  stop(): void;
+  setReducedMotion(v: boolean): void;
+  getPointerSpeed(): number;
+  setSound(ev: any): void;
+  getQuality(): string;
+  setQuality(q: RelaxQuality): void;
+}
+
 const SKY = { bgTop: "#2a5120", bgBot: "#163a10" };
 const BLADE_COLS = ["#2f6b22", "#3f8a2b", "#57a838", "#6cc24a", "#8fd65e"];
 function rand(a, b) {
