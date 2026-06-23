@@ -33,7 +33,6 @@ export default function Masthead({ active }: { active?: string }) {
                 </svg>
                 <span>Telegram</span>
               </a>
-              <button className="util-link util-login" type="button">Войти</button>
             </span>
           </div>
         </div>
