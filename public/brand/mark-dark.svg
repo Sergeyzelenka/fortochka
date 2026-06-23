@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img" aria-label="ФОРТОЧКА">
+  <path d="M50,20 L64,20 A16,16 0 0 1 80,36 L80,42 L50,42 Z" fill="#F2B22D"></path>
+  <rect x="20" y="20" width="60" height="60" rx="16" fill="none" stroke="#FAFAF7" stroke-width="8.5"></rect>
+  <line x1="50" y1="6" x2="50" y2="94" stroke="#FAFAF7" stroke-width="8.5" stroke-linecap="round"></line>
+  <line x1="50" y1="42" x2="80" y2="42" stroke="#FAFAF7" stroke-width="8.5"></line>
+</svg>

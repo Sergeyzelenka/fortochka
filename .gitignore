@@ -1,0 +1,15 @@
+node_modules/
+.next/
+.env*.local
+.env
+*.tsbuildinfo
+next-env.d.ts
+
+# Supabase локальные артефакты
+supabase/.temp/
+supabase/.branches/
+
+# Дампы базы с данными (в репозиторий не нужны)
+backup-data.sql
+backup-schema.sql
+schema-current.sql

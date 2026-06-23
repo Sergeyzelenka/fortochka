@@ -1,0 +1,36 @@
+{
+  "name": "taks",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "worker": "tsx --env-file=.env.local worker/run.ts",
+    "worker:collect": "tsx --env-file=.env.local worker/run.ts collect",
+    "worker:filter": "tsx --env-file=.env.local worker/run.ts filter",
+    "worker:draft": "tsx --env-file=.env.local worker/run.ts draft",
+    "worker:resanitize": "tsx --env-file=.env.local worker/scripts/resanitize.ts",
+    "worker:refetch-images": "tsx --env-file=.env.local worker/scripts/refetch-images.ts",
+    "worker:verify-images": "tsx --env-file=.env.local worker/scripts/verify-images.ts",
+    "worker:enrich-text": "tsx --env-file=.env.local worker/scripts/enrich-text.ts",
+    "worker:dedupe-images": "tsx --env-file=.env.local worker/scripts/dedupe-images.ts",
+    "worker:fix-figures": "tsx --env-file=.env.local worker/scripts/fix-figures.ts",
+    "worker:find-dupes": "tsx --env-file=.env.local worker/scripts/find-dupes.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5",
+    "isomorphic-dompurify": "^3.17.0",
+    "next": "^14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.3"
+  }
+}
