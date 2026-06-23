@@ -211,7 +211,7 @@ function userPayload(sourceName: string, title: string, text: string, imagesCont
   return base;
 }
 
-export async function draftArticleGemini(title: string, text: string, sourceName: string, categoryId?: number | null, imagesContext?: string): Promise<Draft> {
+async function draftArticleGeminiRaw(title: string, text: string, sourceName: string, categoryId?: number | null, imagesContext?: string): Promise<Draft> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error('GEMINI_API_KEY не задан');
   const hint = categoryHint(categoryId);
@@ -242,6 +242,17 @@ export async function draftArticleGemini(title: string, text: string, sourceName
     const raw = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
     return extractJson(raw) as Draft;
   });
+}
+
+// Публичная обёртка: пробуем Gemini, при перегрузке/ошибке откатываемся на Groq.
+export async function draftArticleGemini(title: string, text: string, sourceName: string, categoryId?: number | null, imagesContext?: string): Promise<Draft> {
+  try {
+    return await draftArticleGeminiRaw(title, text, sourceName, categoryId, imagesContext);
+  } catch (e: any) {
+    // 503/UNAVAILABLE/429 = перегрузка Gemini. Не падаем — пишем через Groq.
+    console.warn(`Gemini недоступен (${e?.status ?? '?'}), откат на Groq:`, e?.message?.slice?.(0, 200));
+    return draftArticle(title, text, sourceName, categoryId, imagesContext);
+  }
 }
 
 export async function draftArticle(title: string, text: string, sourceName: string, categoryId?: number | null, imagesContext?: string): Promise<Draft> {
