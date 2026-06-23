@@ -1,9 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Brand from '@/components/Brand';
 
-export default function AdminLoginPage() {
+function AdminLoginForm() {
   const router = useRouter();
   const sp = useSearchParams();
   const next = sp.get('next') || '/admin';
@@ -54,5 +54,13 @@ export default function AdminLoginPage() {
         {err && <p className="admin-login-err">{err}</p>}
       </form>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminLoginForm />
+    </Suspense>
   );
 }
