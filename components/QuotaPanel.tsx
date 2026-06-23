@@ -19,6 +19,8 @@ interface Snap {
   groqUsageToday?: { filter: CountInfo; draft: CountInfo };
   gemini: CountInfo;
   apiyi: CountInfo;
+  geminiAll?: CountInfo;
+  apiyiAll?: CountInfo;
 }
 
 function pct(remaining: number | null, limit: number | null): number | null {
@@ -71,7 +73,7 @@ export default function QuotaPanel() {
             <div className="qp-counter">
               <b>{(s.groqUsageToday?.filter.calls ?? 0) + (s.groqUsageToday?.draft.calls ?? 0)}</b> вызовов сегодня
             </div>
-            <div className="qp-note">остатки лимита появятся после первого вызова с момента запуска dev</div>
+            <div className="qp-note">фильтр {s.groqUsageToday?.filter.calls ?? 0} · драфт {s.groqUsageToday?.draft.calls ?? 0} · сброс в полночь UTC</div>
           </div>
         ) : groqModels.map(([model, g]) => {
           const pReq = pct(g.remainingRequests, g.limitRequests);
@@ -105,7 +107,7 @@ export default function QuotaPanel() {
           <div className="qp-bar" style={{ marginTop: 6 }}>
             <span style={{ width: `${Math.min(100, Math.round((s.gemini.calls / 20) * 100))}%`, background: barColor(100 - (s.gemini.calls / 20) * 100) }} />
           </div>
-          <div className="qp-note">бесплатный лимит 20 запросов/день · сброс в полночь UTC</div>
+          <div className="qp-note">бесплатный лимит 20/день · сброс в полночь UTC · всего за все дни: {s.geminiAll?.calls ?? 0}</div>
         </div>
 
         <div className="qp-card">
@@ -114,7 +116,7 @@ export default function QuotaPanel() {
             <b>{s.apiyi.calls}</b> иллюстраций сегодня
             {s.apiyi.errors > 0 && <span className="qp-err"> · {s.apiyi.errors} ошибок</span>}
           </div>
-          <div className="qp-note">тариф зависит от плана APIYI · сброс по логике провайдера</div>
+          <div className="qp-note">сегодня {s.apiyi.calls} · всего за все дни: {s.apiyiAll?.calls ?? 0} · тариф зависит от плана APIYI</div>
         </div>
       </div>
     </div>
