@@ -81,30 +81,44 @@ function extractImageData(data: any): string | null {
 export async function generateIllustrationPng(input: IllustrateInput): Promise<Buffer> {
   const key = process.env.APIYI_API_KEY;
   if (!key) throw new Error('APIYI_API_KEY не задан');
-  const prompt = buildPrompt(input);
+  // Усиливаем инструкцию: модель gemini-2.5-flash-image через прокси иногда
+  // отвечает текстом («вот ваша иллюстрация:») вместо самой картинки.
+  const prompt = buildPrompt(input) +
+    ' Return ONLY the generated image. Do not reply with any text, description, or explanation — output the image itself.';
 
-  const res = await fetch(ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${key}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      modalities: ['image', 'text']
-    })
-  });
-  recordCall('apiyi', res.ok);
-  if (!res.ok) {
-    throw new Error(`APIYI ${res.status}: ${(await res.text()).slice(0, 500)}`);
+  // Делаем до 3 попыток: если в ответе нет картинки (модель «заболтала»), пробуем снова.
+  let lastErr = '';
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const res = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        modalities: ['image', 'text']
+      })
+    });
+    recordCall('apiyi', res.ok);
+    if (!res.ok) {
+      lastErr = `APIYI ${res.status}: ${(await res.text()).slice(0, 300)}`;
+      // 429/5xx — ждём и пробуем снова; прочие коды смысла повторять нет.
+      if (res.status === 429 || res.status >= 500) {
+        await new Promise(r => setTimeout(r, 1500 * attempt));
+        continue;
+      }
+      throw new Error(lastErr);
+    }
+    const data = await res.json();
+    const b64 = extractImageData(data);
+    if (b64) return Buffer.from(b64, 'base64');
+    // Картинки нет (модель ответила текстом) — короткая пауза и повтор.
+    lastErr = `APIYI не вернул картинку (попытка ${attempt}): ${JSON.stringify(data).slice(0, 250)}`;
+    await new Promise(r => setTimeout(r, 1200 * attempt));
   }
-  const data = await res.json();
-  const b64 = extractImageData(data);
-  if (!b64) {
-    throw new Error(`APIYI не вернул картинку: ${JSON.stringify(data).slice(0, 400)}`);
-  }
-  return Buffer.from(b64, 'base64');
+  throw new Error(lastErr || 'APIYI: не удалось получить картинку за 3 попытки');
 }
 
 const BUCKET = 'covers';
