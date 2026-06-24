@@ -25,6 +25,9 @@ export default function AdminQueue({ initial }: { initial: Article[] }) {
   // id статей, которые мы уже опубликовали/отклонили в этой сессии — чтобы
   // фоновое автообновление не возвращало их в очередь из-за задержки базы.
   const decidedIds = useRef<Set<number>>(new Set());
+  // id -> свежесгенерированный image_url. Чтобы автообновление не затёрло
+  // только что добавленную обложку, пока база не отдала её в pending-списке.
+  const freshImages = useRef<Map<number, string>>(new Map());
 
   async function uploadCoverFile(a: Article, file: File) {
     setUploadingCover(a.id);
@@ -108,7 +111,14 @@ export default function AdminQueue({ initial }: { initial: Article[] }) {
         // Отбрасываем статьи, которые мы только что опубликовали/отклонили:
         // база могла ещё не успеть отдать новый статус.
         const fresh = d.items.filter((x: Article) => !decidedIds.current.has(x.id));
-        setItems(fresh.map((x: Article) => ({ ...x })));
+        setItems(fresh.map((x: Article) => {
+          const pinned = freshImages.current.get(x.id);
+          // Если у нас есть свежая обложка, а сервер ещё отдаёт без неё — держим свою.
+          if (pinned && !x.image_url) return { ...x, image_url: pinned };
+          // Сервер догнал и отдал картинку — снимаем «пин».
+          if (pinned && x.image_url) freshImages.current.delete(x.id);
+          return { ...x };
+        }));
       } catch { /* тихо */ }
     }
     tickCounts(); tickPending();
@@ -177,6 +187,7 @@ export default function AdminQueue({ initial }: { initial: Article[] }) {
       });
       const data = await res.json();
       if (data.url) {
+        freshImages.current.set(a.id, data.url);
         setItems(prev => prev.map(x => x.id === a.id ? { ...x, image_url: data.url } : x));
         flash('Иллюстрация сгенерирована');
       } else {
@@ -189,10 +200,18 @@ export default function AdminQueue({ initial }: { initial: Article[] }) {
   }
 
   async function decide(a: Article, approve: boolean) {
-    setLeaving(a.id);
-    // Запоминаем id обработанных статей, чтобы автообновление очереди не
-    // затянуло их обратно из-за задержки репликации базы.
+    // Карточку убираем СРАЗУ и безусловно — статья уходит из очереди в любом случае.
+    // Сервер мог зависнуть на отправке в Telegram, но решение редактора уже принято,
+    // и статус в базе меняется ДО Telegram. Не держим карточку в подвешенном виде.
     decidedIds.current.add(a.id);
+    setLeaving(a.id);
+    setToast(approve ? 'Публикую…' : 'Отклоняю…');
+    // Короткая анимация ухода, затем убрать из списка.
+    window.setTimeout(() => {
+      setItems(prev => prev.filter(x => x.id !== a.id));
+      setLeaving(null);
+    }, 300);
+    // Запрос на сервер — в фоне. Результат только меняет текст уведомления.
     try {
       const res = await fetch('/api/admin/decide', {
         method: 'POST',
@@ -203,22 +222,16 @@ export default function AdminQueue({ initial }: { initial: Article[] }) {
           category_id: cats[a.id] ?? a.category_id
         })
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (data.ok) {
-        // Убираем карточку сразу (с короткой анимацией ухода).
-        setTimeout(() => setItems(prev => prev.filter(x => x.id !== a.id)), 300);
         setToast(data.message ?? (approve ? 'Опубликовано' : 'Отклонено'));
       } else {
-        // Ошибка — карточку оставляем, чтобы можно было повторить.
-        decidedIds.current.delete(a.id);
-        setToast(data.error ?? 'Не удалось. Попробуй ещё раз.');
+        setToast(data.error ?? 'Сервер вернул ошибку — проверь логи');
       }
     } catch (e: any) {
-      decidedIds.current.delete(a.id);
-      setToast(e.message ?? 'Ошибка сети');
+      setToast(e.message ?? 'Ошибка сети (статья всё равно обработана)');
     }
-    setLeaving(null);
-    setTimeout(() => setToast(''), 3500);
+    window.setTimeout(() => setToast(''), 3500);
   }
 
   return (
