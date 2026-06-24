@@ -4,8 +4,10 @@ name: fortochka-worker
 # Сбор RSS бесплатный; фильтр+драфт тратят квоты Groq/Gemini, поэтому
 # расписание умеренное, чтобы не выжигать дневные лимиты.
 on:
-  schedule:
-    - cron: '15 */3 * * *'    # каждые 3 часа: полный цикл (сбор + фильтр + драфт)
+  # Автозапуск по расписанию ОТКЛЮЧЁН по просьбе пользователя — запускаем вручную.
+  # Чтобы снова включить, раскомментируй блок schedule ниже.
+  # schedule:
+  #   - cron: '15 */3 * * *'
   workflow_dispatch:           # ручной запуск из вкладки Actions
     inputs:
       step:
@@ -21,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - name: Run worker

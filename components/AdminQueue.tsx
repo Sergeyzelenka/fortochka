@@ -272,8 +272,8 @@ export default function AdminQueue({ initial }: { initial: Article[] }) {
                 <button className="abtn no" disabled={!!running} onClick={() => runWorker(['collect'], 'Только сбор')}>
                   {running === 'Только сбор' ? 'Собираю…' : 'Только сбор RSS'}
                 </button>
-                <button className="abtn no" disabled={!!running} onClick={() => runWorker(['filter'], 'Только фильтр')}>
-                  {running === 'Только фильтр' ? 'Фильтрую…' : 'Только фильтр (Groq)'}
+                <button className="abtn no" disabled={!!running} onClick={() => runWorker(['filter'], 'Только фильтр', { useCategory: true })}>
+                  {running === 'Только фильтр' ? 'Фильтрую…' : (draftCatId ? `Фильтр: ${CATEGORIES.find(c=>c.id===Number(draftCatId))?.name ?? ''} (Groq)` : 'Фильтр: все категории (Groq)')}
                 </button>
                 {(() => {
                   const availableInCat = draftCatId ? (filteredCounts[Number(draftCatId)] ?? 0) : filteredTotal;
