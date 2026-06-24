@@ -1,8 +1,17 @@
-name: taks-worker
+name: fortochka-worker
+
+# Воркер по расписанию на серверах GitHub (бесплатно, без лимита времени Vercel).
+# Сбор RSS бесплатный; фильтр+драфт тратят квоты Groq/Gemini, поэтому
+# расписание умеренное, чтобы не выжигать дневные лимиты.
 on:
   schedule:
-    - cron: '17 */2 * * *'   # каждые 2 часа
-  workflow_dispatch: {}       # ручной запуск из вкладки Actions
+    - cron: '15 */3 * * *'    # каждые 3 часа: полный цикл (сбор + фильтр + драфт)
+  workflow_dispatch:           # ручной запуск из вкладки Actions
+    inputs:
+      step:
+        description: 'Какой шаг (пусто = всё: collect+filter+draft; или collect / filter / draft)'
+        required: false
+        default: ''
 
 jobs:
   pipeline:
@@ -11,15 +20,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with:
+          node-version: 20
+          cache: npm
       - run: npm ci
-      - run: npm run worker
+      - name: Run worker
+        run: npm run worker:ci ${{ github.event.inputs.step }}
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
-          TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
-          SITE_URL: ${{ secrets.SITE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL:      ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY:     ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GROQ_API_KEY:                  ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY:                ${{ secrets.GEMINI_API_KEY }}
+          APIYI_API_KEY:                 ${{ secrets.APIYI_API_KEY }}
+          TELEGRAM_BOT_TOKEN:            ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID:           ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          TELEGRAM_ADMIN_CHAT_ID:        ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+          SITE_URL:                      ${{ secrets.SITE_URL }}
