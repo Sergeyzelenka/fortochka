@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 function stepFn(name: string, categoryId?: number): (() => Promise<void>) | null {
   switch (name) {
     case 'collect': return collect;
-    case 'filter': return filterStep;
+    case 'filter': return () => filterStep(categoryId);
     case 'draft': return () => draftStep('groq', categoryId);
     case 'draft-gemini': return () => draftStep('gemini', categoryId);
     default: return null;

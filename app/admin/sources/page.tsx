@@ -9,6 +9,7 @@ export interface SourceRow {
   rss_url: string;
   default_category: number | null;
   enabled: boolean;
+  collect_enabled: boolean;
   last_fetched_at: string | null;
 }
 

@@ -94,6 +94,7 @@ interface SourceRow {
   rss_url: string;
   default_category: number | null;
   enabled: boolean;
+  collect_enabled: boolean;
 }
 
 export async function collect() {
@@ -101,8 +102,11 @@ export async function collect() {
     console.log('collect: пропущен (мок-режим)');
     return;
   }
+  // Собираем только из источников, помеченных «участвует в сборе» (collect_enabled).
+  // enabled — отдельный, более общий выключатель источника; здесь не используется,
+  // чтобы можно было поставить источник на паузу в сборе, не выключая его целиком.
   const { data: sources, error } = await sb()
-    .from('sources').select('*').eq('enabled', true);
+    .from('sources').select('*').eq('collect_enabled', true);
   if (error) throw error;
 
   let added = 0;

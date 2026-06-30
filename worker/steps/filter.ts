@@ -8,17 +8,33 @@ const MAX_ERRORS = 3;
 const BATCH = 30;
 const PAUSE_MS = 1500; // бережём бесплатный лимит Groq
 
-export async function filterStep() {
+export async function filterStep(categoryId?: number) {
   if (isMock) {
     console.log('filter: пропущен (мок-режим)');
     return;
   }
-  const { data, error } = await sb()
+  // Если задана категория — фильтруем только статьи от источников этой категории
+  // (источники привязаны к рубрике через default_category). Так квоты Groq идут
+  // на нужные темы, а не на завал из космоса/медицины.
+  let srcIds: number[] | null = null;
+  if (categoryId) {
+    const { data: srcs } = await sb()
+      .from('sources').select('id').eq('default_category', categoryId);
+    srcIds = (srcs ?? []).map((r: any) => r.id);
+    if (srcIds.length === 0) {
+      console.log(`filter: нет источников у категории ${categoryId}`);
+      return;
+    }
+  }
+
+  let q = sb()
     .from('articles').select('*')
     .eq('status', 'found')
     .lt('error_count', MAX_ERRORS)
     .order('created_at')
     .limit(BATCH);
+  if (srcIds) q = q.in('source_id', srcIds);
+  const { data, error } = await q;
   if (error) throw error;
 
   let passed = 0, rejected = 0;
