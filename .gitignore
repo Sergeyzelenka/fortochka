@@ -13,3 +13,6 @@ supabase/.branches/
 backup-data.sql
 backup-schema.sql
 schema-current.sql
+
+# Внутренние рабочие заметки — не для публичного репозитория
+ПРОДВИЖЕНИЕ.md
